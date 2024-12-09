@@ -23,13 +23,35 @@ st.header('Nama: Muhammad Harsyam')
 st.subheader('Email: jja85120@gmail.com')
 st.subheader('Id Dicoding: muhammad_harsyam')
 
-st.header('1. Top Produk Terlaris')
-st.write('''
-    Berdasarkan grafik di bawah ini dapat dilihat bahwa cama_mesa_banho merupakan produk terlaris.
-    ''')
+# Menambahkan opsi "Semua Produk" ke dropdown kategori
+categories = ['Semua Produk'] + list(df['product_category_name'].unique())
+selected_category = st.selectbox("Pilih Kategori Produk:", categories)
+
+# Filter berdasarkan rentang tanggal
+df['order_purchase_timestamp'] = pd.to_datetime(df['order_purchase_timestamp'])
+start_date, end_date = st.date_input("Pilih Rentang Tanggal:", 
+                                      [df['order_purchase_timestamp'].min().date(), 
+                                       df['order_purchase_timestamp'].max().date()])
+
+# Filter data berdasarkan kategori dan rentang tanggal yang dipilih
+if selected_category == 'Semua Produk':
+    filtered_data = df[(df['order_purchase_timestamp'].dt.date >= start_date) & 
+                       (df['order_purchase_timestamp'].dt.date <= end_date)]
+else:
+    filtered_data = df[(df['product_category_name'] == selected_category) & 
+                       (df['order_purchase_timestamp'].dt.date >= start_date) & 
+                       (df['order_purchase_timestamp'].dt.date <= end_date)]
+
+# Filter untuk kategori yang diawali dengan prefix tertentu
+prefix = st.text_input("Masukkan Prefix Kategori (kosong untuk semua):", "")
+if prefix:
+    filtered_data = filtered_data[filtered_data['product_category_name'].str.startswith(prefix)]
+
+st.header('1. Top Produk Terlaris dalam Kategori Terpilih')
+st.write(f'Produk terlaris dalam kategori {selected_category} dari {start_date} hingga {end_date}:')
 
 # Total penjualan per kategori
-total_penjualan_per_kategori = df.groupby('product_category_name')['order_id'].count().reset_index()
+total_penjualan_per_kategori = filtered_data.groupby('product_category_name')['order_id'].count().reset_index()
 
 # Mengurutkan dan mengambil 10 kategori teratas
 top_10_kategori = total_penjualan_per_kategori.sort_values(by='order_id', ascending=False).head(10)
@@ -49,7 +71,7 @@ st.write('''
      ''')
 
 # Analisis jumlah produk per kategori
-product_category = df['product_category_name'].value_counts()
+product_category = filtered_data['product_category_name'].value_counts()
 st.title("2. Distribusi Jumlah Produk per Kategori:")
 st.bar_chart(product_category)
 st.write('''
@@ -57,10 +79,8 @@ st.write('''
          ''')
 
 # Visualisasi waktu pemesanan
-df['order_purchase_timestamp'] = pd.to_datetime(df['order_purchase_timestamp'])
-df['order_purchase_month'] = df['order_purchase_timestamp'].dt.to_period('M')
-monthly_orders = df.groupby('order_purchase_month').size()
-        
+monthly_orders = filtered_data.groupby(filtered_data['order_purchase_timestamp'].dt.to_period('M')).size()
+
 st.title("3. Jumlah Pesanan per Bulan:")
 plt.figure(figsize=(10, 5))
 plt.plot(monthly_orders.index.astype(str), monthly_orders.values, marker='o')
