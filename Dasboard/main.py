@@ -42,11 +42,6 @@ else:
                        (df['order_purchase_timestamp'].dt.date >= start_date) & 
                        (df['order_purchase_timestamp'].dt.date <= end_date)]
 
-# Filter untuk kategori yang diawali dengan prefix tertentu
-prefix = st.text_input("Masukkan Prefix Kategori (kosong untuk semua):", "")
-if prefix:
-    filtered_data = filtered_data[filtered_data['product_category_name'].str.startswith(prefix)]
-
 st.header('1. Top Produk Terlaris dalam Kategori Terpilih')
 st.write(f'Produk terlaris dalam kategori {selected_category} dari {start_date} hingga {end_date}:')
 
